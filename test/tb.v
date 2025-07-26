@@ -28,7 +28,7 @@ module tb ();
 `endif
 
   // Replace tt_um_example with your module name:
-  tt_um_example user_project (
+  tt_um_secure_serdes_encryptor user_project (
 
       // Include power ports for the Gate Level test:
 `ifdef GL_TEST
@@ -45,5 +45,40 @@ module tb ();
       .clk    (clk),      // clock
       .rst_n  (rst_n)     // not reset
   );
+ // Clock generation
+  always #5 clk = ~clk;
 
+  // Test data
+  reg [7:0] A_data = 8'hC3;
+  reg [7:0] B_data = 8'h5A;
+  integer i;
+
+  initial begin
+    // Init
+    clk = 0;
+    rst_n = 0;
+    ena = 1;
+    ui_in = 8'b0;
+    uio_in = 8'b0;
+
+    // Apply reset
+    #12 rst_n = 1;
+
+    // Start encryption
+    #10 ui_in[0] = 1'b1; // start signal
+
+    // Feed serial bits (MSB first)
+    for (i = 7; i >= 0; i = i - 1) begin
+      #10 ui_in[1] = A_data[i]; // a_bit
+           ui_in[2] = B_data[i]; // b_bit
+    end
+
+    // Clear start signal
+    #10 ui_in[0] = 1'b0;
+
+    // Wait for done signal
+    #200 $finish;
+  end
+   
+   
 endmodule
