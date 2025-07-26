@@ -81,6 +81,7 @@ module tt_um_secure_serdes_encryptor (
     input  wire       rst_n     // reset_n - low to reset
 );
 
+     wire [127:0] key = 128'hA1B2_C3D4_E5F6_0123_4567_89AB_CDEF_1234;
     // Map input signals
     wire start     = ui_in[0];
     wire a_bit     = ui_in[1];
