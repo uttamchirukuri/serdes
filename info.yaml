@@ -23,9 +23,9 @@ project:
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: ""
-  ui[1]: ""
-  ui[2]: ""
+  ui[0]: "start (begin encryption sequence)"
+  ui[1]: "a_bit (serial input bit of operand A)"
+  ui[2]: "b_bit (serial input bit of operand B)"
   ui[3]: ""
   ui[4]: ""
   ui[5]: ""
@@ -33,8 +33,8 @@ pinout:
   ui[7]: ""
 
   # Outputs
-  uo[0]: ""
-  uo[1]: ""
+  uo[0]: "cipher_bit (1-bit encrypted serial output)""
+  uo[1]: "done (high when encryption is complete)"
   uo[2]: ""
   uo[3]: ""
   uo[4]: ""
