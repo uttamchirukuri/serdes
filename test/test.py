@@ -25,16 +25,32 @@ async def test_project(dut):
 
     dut._log.info("Test project behavior")
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+A = 0xC3  # 11000011
+B = 0x5A  # 01011010
 
-    # Wait for one clock cycle to see the output values
+# Trigger 'start' for 1 clock
+dut.ui_in.value = 0b00000001  # ui_in[0] = start
+await ClockCycles(dut.clk, 1)
+dut.ui_in.value = 0  # Clear start
+await ClockCycles(dut.clk, 1)
+
+# Serially shift 8 bits of a_bit and b_bit (MSB to LSB)
+for i in range(7, -1, -1):
+    a_bit = (A >> i) & 1
+    b_bit = (B >> i) & 1
+    dut.ui_in.value = (b_bit << 2) | (a_bit << 1)  # ui_in[2] = b_bit, ui_in[1] = a_bit
     await ClockCycles(dut.clk, 1)
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert (dut.uo_out.value.integer >> 1) & 1 == 1, "Done signal did not go high"
+# Wait for encryption + output shift
+await ClockCycles(dut.clk, 20)
+
+# Log final output
+dut._log.info(f"uo_out = {dut.uo_out.value.integer:08b}")
+
+# Check if 'done' (uo_out[1]) went high
+assert ((dut.uo_out.value.integer >> 1) & 1) == 1, "Done signal did not go high"
+
+
 
     # Keep testing the module by changing the input values, waiting for
     # one or more clock cycles, and asserting the expected output values.
