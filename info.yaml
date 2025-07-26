@@ -33,7 +33,7 @@ pinout:
   ui[7]: ""
 
   # Outputs
-  uo[0]: "cipher_bit (1-bit encrypted serial output)""
+  uo[0]: "cipher_bit (1-bit encrypted serial output)"
   uo[1]: "done (high when encryption is complete)"
   uo[2]: ""
   uo[3]: ""
