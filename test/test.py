@@ -8,54 +8,51 @@ from cocotb.triggers import ClockCycles
 
 @cocotb.test()
 async def test_project(dut):
-    dut._log.info("Start")
+    dut._log.info("Start simulation")
 
-    # Clock: 100 kHz
+    # Set the clock period to 10 us (100 KHz)
     clock = Clock(dut.clk, 10, units="us")
     cocotb.start_soon(clock.start())
 
-    # Reset
-    dut._log.info("Reset")
+    # Apply reset
     dut.ena.value = 1
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
+    dut._log.info("Reset done")
 
-    dut._log.info("Test project behavior")
+    # Set input values
+    A = 0x02  # 00000010
+    B = 0x03  # 00000011
 
-    A = 0xC3  # 11000011
-    B = 0x5A  # 01011010
-
-    # Send first bit MSB
-    i = 7
-    a_bit = (A >> i) & 1
-    b_bit = (B >> i) & 1
-    dut.ui_in.value = (b_bit << 2) | (a_bit << 1)
-    
-    # ✅ Now trigger 'start'
-    dut.ui_in.value = dut.ui_in.value | 0b00000001  # set start=1
+    # Trigger start for 1 clock
+    dut.ui_in.value = 0b00000001  # ui_in[0] = start
     await ClockCycles(dut.clk, 1)
-    
-    # Clear 'start' but keep a_bit and b_bit
-    dut.ui_in.value = (b_bit << 2) | (a_bit << 1)
+    dut.ui_in.value = 0  # Clear start
     await ClockCycles(dut.clk, 1)
 
-    # Send remaining 7 bits
-    for i in range(6, -1, -1):
+    # Serially shift 8 bits of a_bit and b_bit (MSB to LSB)
+    for i in range(7, -1, -1):
         a_bit = (A >> i) & 1
         b_bit = (B >> i) & 1
-        dut.ui_in.value = (b_bit << 2) | (a_bit << 1)
+        dut.ui_in.value = (b_bit << 2) | (a_bit << 1)  # [2]=b_bit, [1]=a_bit
         await ClockCycles(dut.clk, 1)
 
     # Wait for encryption + output shift
-    await ClockCycles(dut.clk, 20)
+    await ClockCycles(dut.clk, 10)
 
-    # Log result
-    dut._log.info(f"uo_out = {dut.uo_out.value.integer:08b}")
+    # Capture output bits
+    result_bits = []
+    for _ in range(8):
+        result_bits.append(dut.uo_out.value.integer & 1)
+        await ClockCycles(dut.clk, 1)
 
-    # Assert DONE went high
+    # Combine bits into final byte
+    result = 0
+    for bit in result_bits:
+        result = (result << 1) | bit
+
+    dut._log.info(f"Encrypted result: {result:02X}")
     assert ((dut.uo_out.value.integer >> 1) & 1) == 1, "Done signal did not go high"
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
