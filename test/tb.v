@@ -75,7 +75,7 @@ module tb ();
     end
 
     // Wait to observe cipher output and done
-    #200 $finish;
+    #50 $finish;
   end
 
 endmodule
