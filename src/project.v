@@ -4,15 +4,20 @@
  */
 
 `default_nettype none
+/*
+ * Copyright (c) 2024 Your Name
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 module secure_serdes_encryptor_core (
-    input wire clk,
-    input wire rst,
-    input wire start,
-    input wire [127:0] key,
-    input wire a_bit,
-    input wire b_bit,
-    output reg cipher_out,
-    output reg done
+    input  wire        clk,
+    input  wire        rst,
+    input  wire        start,
+    input  wire [127:0] key,
+    input  wire        a_bit,
+    input  wire        b_bit,
+    output reg         cipher_out,
+    output reg         done
 );
 
     reg [7:0] A, B;
@@ -25,57 +30,56 @@ module secure_serdes_encryptor_core (
     localparam ENCRYPT = 2'b10;
     localparam OUTPUT  = 2'b11;
 
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        A <= 0; B <= 0; bit_cnt <= 0;
-        encrypted_byte <= 0;
-        state <= IDLE;
-        cipher_out <= 0;
-        done <= 0;
-    end else begin
-        case (state)
-IDLE: begin
-    cipher_out <= 0;  // optional but good style
-    done <= 0;
-    if (start) begin
-        bit_cnt <= 0;
-        A <= 0; B <= 0;
-        state <= SHIFT;
-    end
-end
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            A <= 0; B <= 0; bit_cnt <= 0;
+            encrypted_byte <= 0;
+            state <= IDLE;
+            cipher_out <= 0;
+            done <= 0;
+        end else begin
+            case (state)
 
-            SHIFT: begin
-                A <= {A[6:0], a_bit};
-                B <= {B[6:0], b_bit};
-                bit_cnt <= bit_cnt + 1;
-                if (bit_cnt == 3'd7)
-                    state <= ENCRYPT;
-            end
+                IDLE: begin
+                    cipher_out <= 0;
+                    if (start) begin
+                        done <= 0;      // clear done on new start
+                        bit_cnt <= 0;
+                        A <= 0; B <= 0;
+                        state <= SHIFT;
+                    end
+                end
 
-            ENCRYPT: begin
-                encrypted_byte <= A ^ B ^ key[7:0];
-                bit_cnt <= 0;
-                state <= OUTPUT;
-            end
-OUTPUT: begin
-    cipher_out <= encrypted_byte[7];
-    encrypted_byte <= {encrypted_byte[6:0], 1'b0};
-    
-    if (bit_cnt == 3'd7) begin
-        done <= 1;
-        state <= IDLE;
-    end else begin
-        bit_cnt <= bit_cnt + 1;
-    end
-end
-        endcase
-    end
-end
+                SHIFT: begin
+                    A <= {A[6:0], a_bit};
+                    B <= {B[6:0], b_bit};
+                    bit_cnt <= bit_cnt + 1;
+                    if (bit_cnt == 3'd7)
+                        state <= ENCRYPT;
+                end
 
+                ENCRYPT: begin
+                    encrypted_byte <= A ^ B ^ key[7:0];
+                    bit_cnt <= 0;
+                    state <= OUTPUT;
+                end
+
+                OUTPUT: begin
+                    cipher_out <= encrypted_byte[7];
+                    encrypted_byte <= {encrypted_byte[6:0], 1'b0};
+
+                    if (bit_cnt == 3'd7) begin
+                        done <= 1;      // latch done high
+                        state <= IDLE;
+                    end else begin
+                        bit_cnt <= bit_cnt + 1;
+                    end
+                end
+            endcase
+        end
+    end
 
 endmodule
-
-
 
 
 module tt_um_secure_serdes_encryptor (
@@ -89,17 +93,17 @@ module tt_um_secure_serdes_encryptor (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-     wire [127:0] key = 128'hA1B2_C3D4_E5F6_0123_4567_89AB_CDEF_1234;
+    wire [127:0] key = 128'hA1B2_C3D4_E5F6_0123_4567_89AB_CDEF_1234;
+
     // Map input signals
-    wire start     = ui_in[0];
-    wire a_bit     = ui_in[1];
-    wire b_bit     = ui_in[2];
-    wire rst       = ~rst_n;
+    wire start = ui_in[0];
+    wire a_bit = ui_in[1];
+    wire b_bit = ui_in[2];
+    wire rst   = ~rst_n;
 
     // Output signals
     wire cipher_bit;
     wire done;
-
 
     secure_serdes_encryptor_core core (
         .clk(clk),
