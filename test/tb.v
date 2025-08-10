@@ -28,7 +28,7 @@ module tb ();
 `endif
 
   // Instantiate DUT
-  tt_um_secure_serdes_encryptor user_project (
+  tt_um_secure_serdes_encrypt user_project (
 `ifdef GL_TEST
     .VPWR(VPWR),
     .VGND(VGND),
