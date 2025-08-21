@@ -1,10 +1,10 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Mon Nov 20 16:00:28 2023
+[*] Wed Aug 21 20:05:00 2025
 [*]
 [dumpfile] "/home/uri/p/tt-new-template-proto/test/tb.vcd"
-[dumpfile_mtime] "Mon Nov 20 15:58:34 2023"
-[dumpfile_size] 1110
+[dumpfile_mtime] "Wed Aug 21 20:03:45 2025"
+[dumpfile_size] 2150
 [savefile] "/home/uri/p/tt-new-template-proto/test/tb.gtkw"
 [timestart] 0
 [size] 1376 600
@@ -25,6 +25,20 @@ tb.user_project.rst_n
 -Inputs
 @22
 tb.user_project.ui_in[7:0]
+@28
+tb.user_project.start
+tb.user_project.a_bit
+tb.user_project.b_bit
+@200
+-Filter Signals
+@22
+tb.user_project.filter_out
+tb.user_project.filter_valid
+@200
+-Encryption Core
+@22
+tb.user_project.cipher_bit
+tb.user_project.done
 @200
 -Bidirectional Pins
 @22
