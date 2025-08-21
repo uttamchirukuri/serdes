@@ -40,13 +40,13 @@ async def test_project(dut):
         dut.ui_in.value = (b_bit << 2) | (a_bit << 1)  # [2]=b_bit, [1]=a_bit
         await ClockCycles(dut.clk, 1)
 
-    # Wait for encryption + output shift + filter latency
-    await ClockCycles(dut.clk, 12)
+    # Wait for encryption + output shift
+    await ClockCycles(dut.clk, 10)
 
-    # Capture filtered output bits from uo_out[0]
+    # Capture output bits
     result_bits = []
     for _ in range(8):
-        result_bits.append(dut.uo_out.value.integer & 1)  # filtered bit
+        result_bits.append(dut.uo_out.value.integer & 1)
         await ClockCycles(dut.clk, 1)
 
     # Combine bits into final byte
@@ -54,7 +54,5 @@ async def test_project(dut):
     for bit in result_bits:
         result = (result << 1) | bit
 
-    dut._log.info(f"Filtered Encrypted result: {result:02X}")
-
-    # 'done' should be high and latched
+    dut._log.info(f"Encrypted result: {result:02X}")
     assert ((dut.uo_out.value.integer >> 1) & 1) == 1, "Done signal did not go high"
