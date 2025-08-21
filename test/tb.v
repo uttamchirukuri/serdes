@@ -43,19 +43,19 @@ module tb ();
     .uio_oe (uio_oe)
   );
 
-  // Clock generation: 10ns period (100 MHz)
+  // Clock generation: 10ns period
   always #5 clk = ~clk;
 
-  // Test stimulus
-  reg [7:0] A_data = 8'h02;
-  reg [7:0] B_data = 8'h03;
+  // Internal test registers
+  reg [7:0] A_data = 8'h02; // 11000011
+  reg [7:0] B_data = 8'h03; // 01011010
   integer i;
 
   initial begin
     // Initialize
-    clk   = 0;
+    clk = 0;
     rst_n = 0;
-    ena   = 1;
+    ena = 1;
     ui_in = 0;
     uio_in = 0;
 
@@ -74,8 +74,8 @@ module tb ();
       #10;
     end
 
-    // Allow time to observe filtered cipher output and done
-    #200 $finish;
+    // Wait to observe cipher output and done
+   // #50 $finish;
   end
 
 endmodule
