@@ -3,6 +3,7 @@
 
 /* This testbench just instantiates the module and makes some convenient wires
    that can be driven / tested by the cocotb test.py.
+   Modified to support filtered SERDES outputs.
 */
 module tb ();
 
@@ -18,8 +19,8 @@ module tb ();
   reg ena;
   reg [7:0] ui_in;
   reg [7:0] uio_in;
-  wire [7:0] uo_out;
-  wire [7:0] uio_out;
+  wire [7:0] uo_out;   // primary outputs (SERDES result)
+  wire [7:0] uio_out;  // filtered outputs mapped here
   wire [7:0] uio_oe;
 
 `ifdef GL_TEST
@@ -37,9 +38,9 @@ module tb ();
     .rst_n  (rst_n),
     .ena    (ena),
     .ui_in  (ui_in),
-    .uo_out (uo_out),
-    .uio_in (uio_in),
-    .uio_out(uio_out),
+    .uo_out (uo_out),   // SERDES encrypted output
+    .uio_in (uio_in),   // not used
+    .uio_out(uio_out),  // mapped to filter outputs
     .uio_oe (uio_oe)
   );
 
@@ -47,8 +48,8 @@ module tb ();
   always #5 clk = ~clk;
 
   // Internal test registers
-  reg [7:0] A_data = 8'h02; // 11000011
-  reg [7:0] B_data = 8'h03; // 01011010
+  reg [7:0] A_data = 8'hA5; // example: 10100101
+  reg [7:0] B_data = 8'h3C; // example: 00111100
   integer i;
 
   initial begin
@@ -74,8 +75,8 @@ module tb ();
       #10;
     end
 
-    // Wait to observe cipher output and done
-   // #50 $finish;
+    // Wait to observe cipher output and filtered outputs
+    #200 $finish;
   end
 
 endmodule
