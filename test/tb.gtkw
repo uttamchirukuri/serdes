@@ -36,8 +36,14 @@ tb.user_project.uio_out[7:0]
 @22
 tb.user_project.uo_out[7:0]
 @200
--Filtered Debug
+-Filtered Signals
 @22
-tb.user_project.cipher_filtered
+tb.user_project.a_filtered[7:0]
+tb.user_project.b_filtered[7:0]
+tb.user_project.cipher_filtered[7:0]
+@200
+-Raw Core Output
+@22
+tb.user_project.cipher_raw
 [pattern_trace] 1
 [pattern_trace] 0
