@@ -1,53 +1,51 @@
 [*]
-[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Wed Aug 21 20:05:00 2025
+[*] GTKWave Analyzer v3.3.114 (w)1999-2023 BSI
+[*] Dumpfile created: tb.vcd
 [*]
-[dumpfile] "/home/uri/p/tt-new-template-proto/test/tb.vcd"
-[dumpfile_mtime] "Wed Aug 21 20:03:45 2025"
-[dumpfile_size] 2150
-[savefile] "/home/uri/p/tt-new-template-proto/test/tb.gtkw"
+
+[dumpfile] tb.vcd
+[dumpfile_mtime] 0
+[dumpfile_size] 0
+[savefile] tb.gtkw
 [timestart] 0
-[size] 1376 600
+[size] 1920 1080
 [pos] -1 -1
-*-24.534533 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] tb.
-[sst_width] 297
-[signals_width] 230
+*-15.000000 100 -1 -1 -1 -1 -1
+[sst_width] 250
+[signals_width] 200
 [sst_expanded] 1
-[sst_vpaned_height] 158
+[sst_vpaned_height] 300
+[treeopen] tb.
+[treeopen] tb.user_project.
+
+# Clock / Reset / Control
 @28
-tb.user_project.ena
-@29
-tb.user_project.clk
+tb.clk
+tb.rst_n
+tb.ena
+
+# Inputs
 @28
-tb.user_project.rst_n
-@200
--Inputs
-@22
-tb.user_project.ui_in[7:0]
+tb.ui_in[7:0]
+tb.uio_in[7:0]
+
+# Filtered internal signals (show clean versions of a_bit, b_bit)
+@28
+tb.user_project.a_filtered
+tb.user_project.b_filtered
+
+# DUT interface outputs
+@28
+tb.uo_out[7:0]
+tb.uio_out[7:0]
+tb.uio_oe[7:0]
+
+# Handshake and status
 @28
 tb.user_project.start
+tb.user_project.done
+
+# Debug – before filter vs after filter
+@28
 tb.user_project.a_bit
 tb.user_project.b_bit
-@200
--Filter Signals
-@22
-tb.user_project.filter_out
-tb.user_project.filter_valid
-@200
--Encryption Core
-@22
-tb.user_project.cipher_bit
-tb.user_project.done
-@200
--Bidirectional Pins
-@22
-tb.user_project.uio_in[7:0]
-tb.user_project.uio_oe[7:0]
-tb.user_project.uio_out[7:0]
-@200
--Output Pins
-@22
-tb.user_project.uo_out[7:0]
-[pattern_trace] 1
-[pattern_trace] 0
