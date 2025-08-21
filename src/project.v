@@ -4,16 +4,20 @@
  */
 
 `default_nettype none
+/*
+ * Copyright (c) 2024 Your Name
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 module secure_serdes_encryptor_core (
-    input  wire        clk,
-    input  wire        rst,
-    input  wire        start,
+    input  wire         clk,
+    input  wire         rst,
+    input  wire         start,
     input  wire [127:0] key,
-    input  wire        a_bit,
-    input  wire        b_bit,
-    output reg         cipher_out,
-    output reg         done
+    input  wire         a_bit,
+    input  wire         b_bit,
+    output reg          cipher_out,
+    output reg          done
 );
 
     reg [7:0] A, B;
@@ -21,17 +25,10 @@ module secure_serdes_encryptor_core (
     reg [7:0] encrypted_byte;
     reg [1:0] state;
 
-    // Filter registers (simple 3-tap moving average FIR filter)
-    reg [2:0] filter_shift;
-    wire filtered_bit;
-
     localparam IDLE    = 2'b00;
     localparam SHIFT   = 2'b01;
     localparam ENCRYPT = 2'b10;
     localparam OUTPUT  = 2'b11;
-
-    // Moving Average Filter: majority vote of last 3 bits
-    assign filtered_bit = (filter_shift[0] + filter_shift[1] + filter_shift[2] >= 2);
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -40,7 +37,6 @@ module secure_serdes_encryptor_core (
             state <= IDLE;
             cipher_out <= 0;
             done <= 0;
-            filter_shift <= 0;
         end else begin
             case (state)
 
@@ -69,13 +65,8 @@ module secure_serdes_encryptor_core (
                 end
 
                 OUTPUT: begin
-                    // Shift out encrypted bits serially
-                    // Push into filter
-                    filter_shift <= {filter_shift[1:0], encrypted_byte[7]};
+                    cipher_out <= encrypted_byte[7];
                     encrypted_byte <= {encrypted_byte[6:0], 1'b0};
-
-                    // Output the filtered version
-                    cipher_out <= filtered_bit;
 
                     if (bit_cnt == 3'd7) begin
                         done <= 1;      // latch done high
@@ -91,7 +82,33 @@ module secure_serdes_encryptor_core (
 endmodule
 
 
-module tt_um_secure_serdes_encrypt (
+// -----------------------------------------------------------------------------
+// Simple 3-tap majority bit filter (low-pass on serial bitstream)
+// -----------------------------------------------------------------------------
+module bit_filter (
+    input  wire clk,
+    input  wire rst,     // active-high
+    input  wire in_bit,
+    output reg  out_bit
+);
+    reg [2:0] shift;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            shift  <= 3'b000;
+            out_bit <= 1'b0;
+        end else begin
+            shift  <= {shift[1:0], in_bit};
+            // Majority vote of last 3 samples
+            out_bit <= (shift[2] & shift[1]) |
+                       (shift[2] & shift[0]) |
+                       (shift[1] & shift[0]);
+        end
+    end
+endmodule
+
+
+module tt_um_serdes (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -108,11 +125,14 @@ module tt_um_secure_serdes_encrypt (
     wire start = ui_in[0];
     wire a_bit = ui_in[1];
     wire b_bit = ui_in[2];
-    wire rst   = ~rst_n;
+    wire rst   = ~rst_n;   // active-high for internal modules
 
-    // Output signals
+    // Core outputs
     wire cipher_bit;
     wire done;
+
+    // Filtered signal (exposed for GTKWave visibility)
+    wire cipher_filtered;
 
     secure_serdes_encryptor_core core (
         .clk(clk),
@@ -125,10 +145,20 @@ module tt_um_secure_serdes_encrypt (
         .done(done)
     );
 
-    assign uo_out[0] = cipher_bit;  // filtered output
+    // Post-core filter on the serial output bitstream
+    bit_filter filt (
+        .clk(clk),
+        .rst(rst),
+        .in_bit(cipher_bit),
+        .out_bit(cipher_filtered)
+    );
+
+    // Drive outputs: filtered serial bit and done flag
+    assign uo_out[0] = cipher_filtered; // filtered output bit
     assign uo_out[1] = done;
     assign uo_out[7:2] = 0;
 
+    // Unused bidirectional IOs held as inputs
     assign uio_out = 8'b0;
     assign uio_oe  = 8'b0;
 
