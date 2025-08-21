@@ -4,20 +4,64 @@
  */
 
 `default_nettype none
-/*
- * Copyright (c) 2024 Your Name
- * SPDX-License-Identifier: Apache-2.0
- */
 
+// -------------------- FIR Low-Pass Filter --------------------
+module fir_filter #(
+    parameter N = 8,    // data width
+    parameter TAPS = 4  // number of taps
+)(
+    input  wire             clk,
+    input  wire             rst,
+    input  wire signed [N-1:0] din,
+    output reg  signed [N-1:0] dout
+);
+
+    // Example coefficients: [1 2 2 1]
+    reg signed [N-1:0] coeff [0:TAPS-1];
+    initial begin
+        coeff[0] = 8'd1;
+        coeff[1] = 8'd2;
+        coeff[2] = 8'd2;
+        coeff[3] = 8'd1;
+    end
+
+    // Shift register for past inputs
+    reg signed [N-1:0] shift_reg [0:TAPS-1];
+    integer i;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            for (i = 0; i < TAPS; i = i+1)
+                shift_reg[i] <= 0;
+            dout <= 0;
+        end else begin
+            // Shift
+            for (i = TAPS-1; i > 0; i = i-1)
+                shift_reg[i] <= shift_reg[i-1];
+            shift_reg[0] <= din;
+
+            // FIR sum of products
+            integer acc;
+            acc = 0;
+            for (i = 0; i < TAPS; i = i+1)
+                acc = acc + shift_reg[i] * coeff[i];
+
+            dout <= acc >>> 3;  // scaling
+        end
+    end
+
+endmodule
+
+// -------------------- Original Core --------------------
 module secure_serdes_encryptor_core (
-    input  wire         clk,
-    input  wire         rst,
-    input  wire         start,
+    input  wire        clk,
+    input  wire        rst,
+    input  wire        start,
     input  wire [127:0] key,
-    input  wire         a_bit,
-    input  wire         b_bit,
-    output reg          cipher_out,
-    output reg          done
+    input  wire        a_bit,
+    input  wire        b_bit,
+    output reg         cipher_out,
+    output reg         done
 );
 
     reg [7:0] A, B;
@@ -81,33 +125,7 @@ module secure_serdes_encryptor_core (
 
 endmodule
 
-
-// -----------------------------------------------------------------------------
-// Simple 3-tap majority bit filter (low-pass on serial bitstream)
-// -----------------------------------------------------------------------------
-module bit_filter (
-    input  wire clk,
-    input  wire rst,     // active-high
-    input  wire in_bit,
-    output reg  out_bit
-);
-    reg [2:0] shift;
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            shift  <= 3'b000;
-            out_bit <= 1'b0;
-        end else begin
-            shift  <= {shift[1:0], in_bit};
-            // Majority vote of last 3 samples
-            out_bit <= (shift[2] & shift[1]) |
-                       (shift[2] & shift[0]) |
-                       (shift[1] & shift[0]);
-        end
-    end
-endmodule
-
-
+// -------------------- Wrapper with Filters --------------------
 module tt_um_serdes (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
@@ -123,42 +141,53 @@ module tt_um_serdes (
 
     // Map input signals
     wire start = ui_in[0];
-    wire a_bit = ui_in[1];
-    wire b_bit = ui_in[2];
-    wire rst   = ~rst_n;   // active-high for internal modules
+    wire rst   = ~rst_n;
+
+    // Filtered inputs
+    wire [7:0] a_filtered, b_filtered;
+
+    fir_filter in_filter_a (
+        .clk(clk),
+        .rst(rst),
+        .din({7'b0, ui_in[1]}),   // expand single bit to 8-bit
+        .dout(a_filtered)
+    );
+
+    fir_filter in_filter_b (
+        .clk(clk),
+        .rst(rst),
+        .din({7'b0, ui_in[2]}),
+        .dout(b_filtered)
+    );
 
     // Core outputs
-    wire cipher_bit;
+    wire cipher_raw;
     wire done;
-
-    // Filtered signal (exposed for GTKWave visibility)
-    wire cipher_filtered;
 
     secure_serdes_encryptor_core core (
         .clk(clk),
         .rst(rst),
         .start(start),
-        .a_bit(a_bit),
-        .b_bit(b_bit),
+        .a_bit(a_filtered[0]),   // use filtered LSB
+        .b_bit(b_filtered[0]),
         .key(key),
-        .cipher_out(cipher_bit),
+        .cipher_out(cipher_raw),
         .done(done)
     );
 
-    // Post-core filter on the serial output bitstream
-    bit_filter filt (
+    // Output filter
+    wire [7:0] cipher_filtered;
+    fir_filter out_filter (
         .clk(clk),
         .rst(rst),
-        .in_bit(cipher_bit),
-        .out_bit(cipher_filtered)
+        .din({7'b0, cipher_raw}),
+        .dout(cipher_filtered)
     );
 
-    // Drive outputs: filtered serial bit and done flag
-    assign uo_out[0] = cipher_filtered; // filtered output bit
+    assign uo_out[0] = cipher_filtered[0];
     assign uo_out[1] = done;
     assign uo_out[7:2] = 0;
 
-    // Unused bidirectional IOs held as inputs
     assign uio_out = 8'b0;
     assign uio_oe  = 8'b0;
 
