@@ -4,10 +4,6 @@
  */
 
 `default_nettype none
-/*
- * Copyright (c) 2024 Your Name
- * SPDX-License-Identifier: Apache-2.0
- */
 
 module secure_serdes_encryptor_core (
     input  wire        clk,
@@ -25,10 +21,17 @@ module secure_serdes_encryptor_core (
     reg [7:0] encrypted_byte;
     reg [1:0] state;
 
+    // Filter registers (simple 3-tap moving average FIR filter)
+    reg [2:0] filter_shift;
+    wire filtered_bit;
+
     localparam IDLE    = 2'b00;
     localparam SHIFT   = 2'b01;
     localparam ENCRYPT = 2'b10;
     localparam OUTPUT  = 2'b11;
+
+    // Moving Average Filter: majority vote of last 3 bits
+    assign filtered_bit = (filter_shift[0] + filter_shift[1] + filter_shift[2] >= 2);
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -37,6 +40,7 @@ module secure_serdes_encryptor_core (
             state <= IDLE;
             cipher_out <= 0;
             done <= 0;
+            filter_shift <= 0;
         end else begin
             case (state)
 
@@ -65,8 +69,13 @@ module secure_serdes_encryptor_core (
                 end
 
                 OUTPUT: begin
-                    cipher_out <= encrypted_byte[7];
+                    // Shift out encrypted bits serially
+                    // Push into filter
+                    filter_shift <= {filter_shift[1:0], encrypted_byte[7]};
                     encrypted_byte <= {encrypted_byte[6:0], 1'b0};
+
+                    // Output the filtered version
+                    cipher_out <= filtered_bit;
 
                     if (bit_cnt == 3'd7) begin
                         done <= 1;      // latch done high
@@ -116,7 +125,7 @@ module tt_um_secure_serdes_encrypt (
         .done(done)
     );
 
-    assign uo_out[0] = cipher_bit;
+    assign uo_out[0] = cipher_bit;  // filtered output
     assign uo_out[1] = done;
     assign uo_out[7:2] = 0;
 
