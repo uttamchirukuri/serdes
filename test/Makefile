@@ -6,7 +6,7 @@ SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
 PROJECT_SOURCES = project.v
-
+export COCOTB_RESOLVE_X = 0
 ifneq ($(GATES),yes)
 
 # RTL simulation:
