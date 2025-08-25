@@ -7,9 +7,9 @@ from cocotb.triggers import ClockCycles
 
 
 async def shift_in_byte(dut, pattern: int):
-    """Shift in an 8-bit pattern (MSB first)."""
+    """Shift in an 8-bit pattern (LSB first, matches tb.v)."""
     for i in range(8):
-        bit = (pattern >> (7 - i)) & 1  # MSB first
+        bit = (pattern >> i) & 1  # LSB first
         dut.ui_in.value = bit
         await ClockCycles(dut.clk, 1)
     await ClockCycles(dut.clk, 1)
@@ -17,16 +17,10 @@ async def shift_in_byte(dut, pattern: int):
 
 
 def normalize_result(result: int, expected: int) -> int:
-    """Normalize DUT output to match expected (handles sync byte + bit-order)."""
-    # If DUT emits sync word (0x7E), ignore it and pass through next result
+    """Normalize DUT output to match expected."""
+    # Ignore sync word if DUT outputs one
     if result == 0x7E:
         return None
-
-    # If reversed bit order (LSB-first), fix it
-    rev = int(f"{result:08b}"[::-1], 2)
-    if rev == expected:
-        return rev
-
     return result
 
 
@@ -38,12 +32,12 @@ async def test_project(dut):
     clock = Clock(dut.clk, 10, units="ns")
     cocotb.start_soon(clock.start())
 
-    # Apply reset
+    # Apply reset and enable
     dut.ena.value = 0
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 5)
+    await ClockCycles(dut.clk, 10)  # longer reset
     dut.rst_n.value = 1
     dut.ena.value = 1
     dut._log.info("Reset done")
@@ -54,7 +48,6 @@ async def test_project(dut):
 
     norm1 = normalize_result(result1, pattern1)
     if norm1 is None:
-        # Sync word, capture again
         result1 = await shift_in_byte(dut, pattern1)
         norm1 = normalize_result(result1, pattern1)
 
