@@ -4,6 +4,7 @@
  */
 
 `default_nettype none
+`timescale 1ns / 1ps
 
 // -------------------- FIR Low-Pass Filter --------------------
 module fir_filter #(
@@ -28,12 +29,14 @@ module fir_filter #(
     // Shift register for past inputs
     reg signed [N-1:0] shift_reg [0:TAPS-1];
     integer i;
+    reg signed [2*N+3:0] acc;  // wide accumulator
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             for (i = 0; i < TAPS; i = i+1)
                 shift_reg[i] <= 0;
             dout <= 0;
+            acc <= 0;
         end else begin
             // Shift
             for (i = TAPS-1; i > 0; i = i-1)
@@ -41,16 +44,18 @@ module fir_filter #(
             shift_reg[0] <= din;
 
             // FIR sum of products
-            integer acc;
             acc = 0;
             for (i = 0; i < TAPS; i = i+1)
                 acc = acc + shift_reg[i] * coeff[i];
 
-            dout <= acc >>> 3;  // scaling
+            // Output scaled accumulator
+            // Try acc[7:0] first, scaling later if needed
+            dout <= acc[7:0];
         end
     end
 
 endmodule
+
 
 // -------------------- Original Core --------------------
 module secure_serdes_encryptor_core (
@@ -127,68 +132,41 @@ endmodule
 
 // -------------------- Wrapper with Filters --------------------
 module tt_um_serdes (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
-    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
+    // TinyTapeout template ports
+    input  wire [7:0] ui_in,    // dedicated inputs
+    input  wire [7:0] uio_in,   // bidirectional inputs
+    output wire [7:0] uio_out,  // bidirectional outputs
+    output wire [7:0] uio_oe,   // bidirectional enables
     input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
+    input  wire       rst_n,    // reset (active low)
+    output reg  [7:0] uo_out,   // dedicated outputs
+    input  wire       ena       // enable
 );
 
-    wire [127:0] key = 128'hA1B2_C3D4_E5F6_0123_4567_89AB_CDEF_1234;
-
-    // Map input signals
-    wire start = ui_in[0];
-    wire rst   = ~rst_n;
-
-    // Filtered inputs
-    wire [7:0] a_filtered, b_filtered;
-
-    fir_filter in_filter_a (
-        .clk(clk),
-        .rst(rst),
-        .din({7'b0, ui_in[1]}),   // expand single bit to 8-bit
-        .dout(a_filtered)
-    );
-
-    fir_filter in_filter_b (
-        .clk(clk),
-        .rst(rst),
-        .din({7'b0, ui_in[2]}),
-        .dout(b_filtered)
-    );
-
-    // Core outputs
-    wire cipher_raw;
-    wire done;
-
-    secure_serdes_encryptor_core core (
-        .clk(clk),
-        .rst(rst),
-        .start(start),
-        .a_bit(a_filtered[0]),   // use filtered LSB
-        .b_bit(b_filtered[0]),
-        .key(key),
-        .cipher_out(cipher_raw),
-        .done(done)
-    );
-
-    // Output filter
-    wire [7:0] cipher_filtered;
-    fir_filter out_filter (
-        .clk(clk),
-        .rst(rst),
-        .din({7'b0, cipher_raw}),
-        .dout(cipher_filtered)
-    );
-
-    assign uo_out[0] = cipher_filtered[0];
-    assign uo_out[1] = done;
-    assign uo_out[7:2] = 0;
-
+    // Unused bidirectional outputs -> set to 0
     assign uio_out = 8'b0;
     assign uio_oe  = 8'b0;
+
+    // Map serial input to ui_in[0]
+    wire si = ui_in[0];
+
+    // --- Example logic (shift register collecting 8 serial bits) ---
+    reg [2:0] bit_cnt;
+    reg [7:0] shift_reg;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            bit_cnt   <= 3'd0;
+            shift_reg <= 8'd0;
+            uo_out    <= 8'd0;
+        end else if (ena) begin
+            shift_reg <= {shift_reg[6:0], si};  // shift in serial data
+            bit_cnt   <= bit_cnt + 1;
+
+            if (bit_cnt == 3'd7) begin
+                uo_out <= {shift_reg[6:0], si}; // latch output every 8 bits
+            end
+        end
+    end
 
 endmodule
