@@ -7,7 +7,7 @@ from cocotb.triggers import ClockCycles
 
 
 @cocotb.test()
-async def test_serdes(dut):
+async def test_project(dut):
     dut._log.info("Start simulation")
 
     # Clock 100 MHz
