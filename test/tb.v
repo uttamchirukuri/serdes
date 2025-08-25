@@ -24,16 +24,17 @@ module tb;
         .ena(ena)
     );
 
-    // Clock generator
+    // Clock generator: 100MHz (10ns period)
     always #5 clk = ~clk;
 
     // Task to send one byte serially (LSB first)
     task send_byte(input [7:0] data);
         integer i;
         begin
+            $display("[%0t] Sending byte 0x%02h", $time, data);
             for (i = 0; i < 8; i = i + 1) begin
                 ui_in[0] = data[i];
-                #10;  // 1 clock cycle at 100MHz (10ns)
+                #10;  // one clock period
             end
         end
     endtask
@@ -43,22 +44,27 @@ module tb;
         $dumpfile("tb.vcd");
         $dumpvars(0, tb);
 
-        clk   = 0;
-        rst_n = 0;
-        ena   = 0;
-        ui_in = 8'd0;
-        uio_in= 8'd0;
+        clk    = 0;
+        rst_n  = 0;
+        ena    = 0;
+        ui_in  = 8'd0;
+        uio_in = 8'd0;
 
-        #20 rst_n = 1;
-        #10 ena = 1;
+        // Longer reset (50ns instead of 20ns)
+        #50 rst_n = 1;
 
-        // Send 0xAA (10101010)
-        send_byte(8'hAA);
+        // Hold idle inputs before enable
+        #20;
+        ena = 1;
 
-        // Send 0xCC (11001100)
-        send_byte(8'hCC);
+        // Apply same patterns as in test.py
+        send_byte(8'h3C);   // first test byte
+        send_byte(8'hA5);   // second test byte
+        send_byte(8'hFF);   // third test byte
+        send_byte(8'h12);   // fourth test byte
 
-        #100;
+        // Extra idle cycles
+        #200;
         $finish;
     end
 
