@@ -29,7 +29,7 @@ module testbench;
 
     // Test sequence
     initial begin
-        $dumpfile("wave.vcd");
+        $dumpfile("tb.vcd");
         $dumpvars(0, testbench);
 
         clk   = 0;
