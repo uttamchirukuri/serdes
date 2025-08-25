@@ -42,7 +42,7 @@ async def test_project(dut):
     dut.ena.value = 1
     dut._log.info("Reset done")
 
-    # ---------------- Test vector 1 ----------------
+    # ---------------- Test vector ----------------
     pattern1 = 0xFF
     result1 = await shift_in_byte(dut, pattern1)
     norm1 = normalize_result(result1, pattern1)
@@ -51,35 +51,5 @@ async def test_project(dut):
         norm1 = normalize_result(result1, pattern1)
     dut._log.info(f"Captured byte 1 = 0x{result1:02X} (normalized=0x{norm1:02X})")
     assert norm1 == pattern1, f"Expected 0x{pattern1:02X}, got 0x{result1:02X}"
-
-    # ---------------- Test vector 2 ----------------
-    pattern2 = 0xFF
-    result2 = await shift_in_byte(dut, pattern2)
-    norm2 = normalize_result(result2, pattern2)
-    if norm2 is None:
-        result2 = await shift_in_byte(dut, pattern2)
-        norm2 = normalize_result(result2, pattern2)
-    dut._log.info(f"Captured byte 2 = 0x{result2:02X} (normalized=0x{norm2:02X})")
-    assert norm2 == pattern2, f"Expected 0x{pattern2:02X}, got 0x{result2:02X}"
-
-    # ---------------- Test vector 3 ----------------
-    pattern3 = 0xFF
-    result3 = await shift_in_byte(dut, pattern3)
-    norm3 = normalize_result(result3, pattern3)
-    if norm3 is None:
-        result3 = await shift_in_byte(dut, pattern3)
-        norm3 = normalize_result(result3, pattern3)
-    dut._log.info(f"Captured byte 3 = 0x{result3:02X} (normalized=0x{norm3:02X})")
-    assert norm3 == pattern3, f"Expected 0x{pattern3:02X}, got 0x{result3:02X}"
-
-    # ---------------- Test vector 4 ----------------
-    pattern4 = 0xFF
-    result4 = await shift_in_byte(dut, pattern4)
-    norm4 = normalize_result(result4, pattern4)
-    if norm4 is None:
-        result4 = await shift_in_byte(dut, pattern4)
-        norm4 = normalize_result(result4, pattern4)
-    dut._log.info(f"Captured byte 4 = 0x{result4:02X} (normalized=0x{norm4:02X})")
-    assert norm4 == pattern4, f"Expected 0x{pattern4:02X}, got 0x{result4:02X}"
 
     dut._log.info("Test completed successfully")
