@@ -1,7 +1,7 @@
 `default_nettype none
 `timescale 1ns / 1ps
 
-module testbench;
+module tb;
 
     reg clk;
     reg rst_n;
@@ -30,7 +30,7 @@ module testbench;
     // Test sequence
     initial begin
         $dumpfile("tb.vcd");
-        $dumpvars(0, testbench);
+        $dumpvars(0, tb);
 
         clk   = 0;
         rst_n = 0;
