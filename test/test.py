@@ -43,7 +43,7 @@ async def test_project(dut):
     dut._log.info("Reset done")
 
     # ---------------- Test vector 1 ----------------
-    pattern1 = 0x3C
+    pattern1 = 0xFF
     result1 = await shift_in_byte(dut, pattern1)
     norm1 = normalize_result(result1, pattern1)
     if norm1 is None:
@@ -53,7 +53,7 @@ async def test_project(dut):
     assert norm1 == pattern1, f"Expected 0x{pattern1:02X}, got 0x{result1:02X}"
 
     # ---------------- Test vector 2 ----------------
-    pattern2 = 0xA5
+    pattern2 = 0xFF
     result2 = await shift_in_byte(dut, pattern2)
     norm2 = normalize_result(result2, pattern2)
     if norm2 is None:
@@ -73,7 +73,7 @@ async def test_project(dut):
     assert norm3 == pattern3, f"Expected 0x{pattern3:02X}, got 0x{result3:02X}"
 
     # ---------------- Test vector 4 ----------------
-    pattern4 = 0x12
+    pattern4 = 0xFF
     result4 = await shift_in_byte(dut, pattern4)
     norm4 = normalize_result(result4, pattern4)
     if norm4 is None:
