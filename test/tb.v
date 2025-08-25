@@ -58,10 +58,10 @@ module tb;
         ena = 1;
 
         // Apply same patterns as in test.py
-        send_byte(8'h3C);   // first test byte
-        send_byte(8'hA5);   // second test byte
+        send_byte(8'hFF);   // first test byte
+        send_byte(8'hFF);   // second test byte
         send_byte(8'hFF);   // third test byte
-        send_byte(8'h12);   // fourth test byte
+        send_byte(8'hFF);   // fourth test byte
 
         // Extra idle cycles
         #200;
