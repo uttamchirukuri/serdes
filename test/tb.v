@@ -27,6 +27,17 @@ module tb;
     // Clock generator
     always #5 clk = ~clk;
 
+    // Task to send one byte serially (LSB first)
+    task send_byte(input [7:0] data);
+        integer i;
+        begin
+            for (i = 0; i < 8; i = i + 1) begin
+                ui_in[0] = data[i];
+                #10;  // 1 clock cycle at 100MHz (10ns)
+            end
+        end
+    endtask
+
     // Test sequence
     initial begin
         $dumpfile("tb.vcd");
@@ -41,21 +52,14 @@ module tb;
         #20 rst_n = 1;
         #10 ena = 1;
 
-        // Send serial pattern: 10101010
-        repeat (8) begin
-            ui_in[0] = $random;  // toggle serial input
-            #10;
-        end
+        // Send 0xAA (10101010)
+        send_byte(8'hAA);
 
-        // Another byte
-        repeat (8) begin
-            ui_in[0] = $random;
-            #10;
-        end
+        // Send 0xCC (11001100)
+        send_byte(8'hCC);
 
         #100;
         $finish;
     end
 
 endmodule
-
