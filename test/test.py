@@ -53,7 +53,7 @@ async def test_dut(dut):
     dut._log.info("Enable asserted")
 
     # === Example test ===
-    test_byte = 0xA5
+    test_byte = 0x00
     dut._log.info(f"Sending byte 0x{test_byte:02X}")
     result = await shift_in_byte(dut, test_byte)
 
