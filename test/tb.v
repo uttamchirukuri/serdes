@@ -47,8 +47,8 @@ module tb;
         clk    = 0;
         rst_n  = 0;
         ena    = 0;
-        ui_in  = 8'd0;
-        uio_in = 8'd0;
+        ui_in  = 8'h00;
+        uio_in = 8'h00;
 
         // Longer reset (50ns instead of 20ns)
         #50 rst_n = 1;
