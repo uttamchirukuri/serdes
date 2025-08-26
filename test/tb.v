@@ -25,7 +25,7 @@ module tb;
     );
 
     // Clock generator: 100MHz (10ns period)
-    always #5 clk = ~clk;
+    // always #5 clk = ~clk;
 
     // Task to send one byte serially (LSB first)
     task send_byte(input [7:0] data);
