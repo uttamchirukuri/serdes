@@ -25,7 +25,7 @@ module tb;
     );
 
     // Clock generator: 100MHz (10ns period)
-    // always #5 clk = ~clk;
+    always #5 clk = ~clk;
 
     // Task to send one byte serially (LSB first)
     task send_byte(input [7:0] data);
@@ -58,7 +58,7 @@ module tb;
         ena = 1;
 
         // Apply same patterns as in test.py
-        send_byte(8'hFF);   // test byte
+        send_byte(8'h00);   // test byte
 
         // Extra idle cycles
         #200;
