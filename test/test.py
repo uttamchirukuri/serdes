@@ -37,7 +37,8 @@ async def test_project(dut):
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)  # longer reset
+    for _ in range(10):   # hold reset low for 10 clock cycles
+        await RisingEdge(dut.clk)
     dut.rst_n.value = 1
     dut.ena.value = 1
     dut._log.info("Reset done")
