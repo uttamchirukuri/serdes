@@ -43,7 +43,7 @@ async def test_project(dut):
     dut._log.info("Reset done")
 
     # ---------------- Test vector ----------------
-    pattern1 = 0xFF
+    pattern1 = 0x00
     result1 = await shift_in_byte(dut, pattern1)
     norm1 = normalize_result(result1, pattern1)
     if norm1 is None:
