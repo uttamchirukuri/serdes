@@ -36,24 +36,33 @@ def normalize_result(result: int, expected: int) -> int:
 
 
 @cocotb.test()
-async def test_project(dut):
+async def test_dut(dut):
+    """Basic test for TinyTapeout DUT with safer reset/enable sequence."""
     dut._log.info("Start simulation")
 
     # Clock 100 MHz
     clock = Clock(dut.clk, 10, units="ns")
     cocotb.start_soon(clock.start())
 
-    # Apply reset and enable
+    # Defaults
     dut.ena.value = 0
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    for _ in range(10):  # 10 cycles reset
+
+    # Hold reset low for 20 cycles
+    for _ in range(20):
         await RisingEdge(dut.clk)
+
     dut.rst_n.value = 1
+    dut._log.info("Reset released")
+
+    # Keep enable low for another 10 cycles after reset
+    for _ in range(10):
+        await RisingEdge(dut.clk)
+
     dut.ena.value = 1
-    await ClockCycles(dut.clk, 5)  # wait extra after reset
-    dut._log.info("Reset done")
+    dut._log.info("Enable asserted")
 
     # ---------------- Test vector ----------------
     pattern1 = 0x00
