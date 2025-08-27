@@ -13,7 +13,7 @@ We gratefully acknowledge the Center of Excellence (CoE) in Integrated Circuits 
 
 ## How it works
 
-This project implements a **Serial Input → FIR Filter → Parallel Output** pipeline.  
+This project integrates SERDES functionality with an FIR filter to process serial input data and generate parallel output.
 
 * Incoming serial data is first processed through a small **Finite Impulse Response (FIR) filter** implemented in the RTL.  
 * The filtered bitstream is then shifted into an **8-bit serial-to-parallel (SIPO) register**.  
@@ -21,7 +21,6 @@ This project implements a **Serial Input → FIR Filter → Parallel Output** pi
 
 This design demonstrates both **signal processing (digital FIR filtering)** and **data reformatting (SERDES)** in a compact TinyTapeout-friendly implementation.
 
----
 
 ## Functional Description
 
@@ -43,8 +42,6 @@ This design demonstrates both **signal processing (digital FIR filtering)** and 
 * `uio_out[7:0]`: Not used; tied to zero.  
 * `uio_oe[7:0]`: Not used; tied to zero.  
 
----
-
 ## Internal Architecture
 
 ### 1. FIR Filter
@@ -62,14 +59,10 @@ This design demonstrates both **signal processing (digital FIR filtering)** and 
 
 ### 3. Reset / Enable Behavior
 
-* On reset (`rst_n=0`):
-  * FIR filter state, shift register, counter, and outputs are cleared.  
-* With enable (`ena=1`):
-  * FIR filter runs, serial data is captured and converted to bytes.  
-* With enable low (`ena=0`):
-  * Circuit holds state; no new data is processed.  
+* On reset (`rst_n=0`): FIR filter state, shift register, counter, and outputs are cleared.  
+* With enable (`ena=1`): FIR filter runs, serial data is captured and converted to bytes.  
+* With enable low (`ena=0`): Circuit holds state; no new data is processed.  
 
----
 
 ## How to test
 
@@ -81,11 +74,10 @@ This design demonstrates both **signal processing (digital FIR filtering)** and 
    * Check both waveform filtering in `tb.vcd`.  
    * Log `uo_out` values in cocotb logs.  
 
----
 
 ## External hardware
 
 * No external hardware is required.  
-* For demo boards:
+* For demo purposes:
   * Connect `uo_out[7:0]` to LEDs → filtered 8-bit pattern visualized.  
   * Drive `ui_in[0]` from switches, UART TX, or FPGA I/O.  
