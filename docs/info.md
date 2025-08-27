@@ -17,15 +17,15 @@ This project demonstrates a compact serial data pipeline that combines SERDES (s
 
 * Serial input (ui_in[0]) is deserialized into 8-bit words (LSB-first).
 
-* Each received byte is passed through a 4-tap FIR filter (y = (1·x0 + 2·x1 + 2·x2 + 1·x3) >> 2).
+* Each received byte is passed through a 4-tap FIR filter.
 
-* The filtered output is XOR-encrypted with a fixed 8-bit key (0xA5 by default).
+* The filtered output is XOR-encrypted with a fixed 8-bit key.
 
 * The encrypted byte is then shifted out serially (MSB-first) on uo_out[0].
 
 * A one-cycle done pulse appears on uo_out[1] after each full byte is transmitted.
 
-This pipeline highlights both signal processing (FIR) and secure data formatting (SERDES + XOR encryption) within TinyTapeout’s tight resource budget.
+This pipeline highlights both signal processing (FIR) and secure data formatting (SERDES + XOR encryption).
 
 ## Functional Description
 ### Input and Output Ports
@@ -63,43 +63,43 @@ The design uses a small FSM to coordinate the receiver → filter → encrypter 
 
 1. **IDLE**
 
-Waits for ena=1.
-
-Resets counters and clears shift registers.
+    Waits for ena=1.
+    
+    Resets counters and clears shift registers.
 
 2. **RX**
 
-Shifts serial input (ui_in[0]) into an 8-bit register, LSB-first.
-
-After 8 bits are received → transition to FIR.
+    Shifts serial input (ui_in[0]) into an 8-bit register, LSB-first.
+    
+    After 8 bits are received → transition to FIR.
 
 3. **FIR**
 
-Updates the FIR delay line (d1, d2, d3).
-
-Computes the 4-tap FIR output (fir_out).
-
-Advances to ENC.
+    Updates the FIR delay line (d1, d2, d3).
+    
+    Computes the 4-tap FIR output (fir_out).
+    
+    Advances to ENC.
 
 4. **ENC**
 
-XORs fir_out with key (KEY = 0xA5).
-
-Loads result into transmit shift register.
-
-Moves to TX.
+    XORs fir_out with key (KEY = 0xA5).
+    
+    Loads result into transmit shift register.
+    
+    Moves to TX.
 
 5. **TX**
 
-Shifts out 8 bits MSB-first on uo_out[0].
-
-After last bit → goes to DONE.
+    Shifts out 8 bits MSB-first on uo_out[0].
+    
+    After last bit → goes to DONE.
 
 6. **DONE**
 
-Pulses uo_out[1] high for one cycle.
-
-Immediately transitions back to RX for next byte.
+    Pulses uo_out[1] high for one cycle.
+    
+    Immediately transitions back to RX for next byte.
 
 **FIR Filter**
 
