@@ -43,6 +43,49 @@ This design demonstrates both **signal processing (digital FIR filtering)** and 
 * `uio_oe[7:0]`: Not used; tied to zero.  
 
 ## Internal Architecture
+## Finite State Machine (FSM)
+
+The design includes a dedicated FSM to control the SERDES (serializer/deserializer), FIR filter feeding, and parallel output generation. The FSM ensures correct sequencing of reset, bit-shifting, filtering, and word reassembly.
+
+### States and Transitions
+
+1. **RESET**
+   - Asserted when `rst_n = 0`.
+   - Clears all internal registers, counters, and FIR pipeline.
+   - Transitions to **IDLE** once reset is released.
+
+2. **IDLE**
+   - Waits for `ena = 1` (design enable).
+   - Serializer/deserializer are held inactive.
+   - Transition: `ena = 1 → LOAD`.
+
+3. **LOAD**
+   - Captures the next serial input bit into the shift register.
+   - Maintains bit counter (`bit_cnt`) for alignment.
+   - Transition: After each clock cycle → **SHIFT**.
+
+4. **SHIFT**
+   - Shifts in serial bits (`ui_in`) LSB-first.
+   - Updates the shift register until 8 bits (one byte) are collected.
+   - Transition: 
+     - If `bit_cnt < 7 → LOAD` (continue shifting).  
+     - If `bit_cnt == 7 → FILTER`.
+
+5. **FILTER**
+   - Assembles 8-bit word from shift register.
+   - Applies FIR filter (N-tap design, coefficients as per RTL).
+   - FIR result stored in pipeline register.
+   - Transition: Once FIR completes → **OUTPUT**.
+
+6. **OUTPUT**
+   - Places FIR-filtered word on parallel output bus (`uo_out`).
+   - Asserts valid output for one cycle.
+   - Transition: Automatically returns to **LOAD** to capture next byte if `ena = 1`; otherwise → **IDLE**.
+   
+- **Counters**: A bit counter (`bit_cnt`) tracks input bits; a word counter may track multiple bytes if needed.  
+- **Handshake**: FIR stage only receives data after a complete word is deserialized.  
+- **Sync Word Handling**: FSM ignores or filters special sync words (e.g., `0x7E`) if configured in RTL.  
+- **Glitch Safety**: FSM prevents partial/invalid data propagation by gating FIR input until a full byte is collected.
 
 ### 1. FIR Filter
 
