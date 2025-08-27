@@ -33,11 +33,18 @@ module tb;
         begin
             $display("[%0t] Sending byte 0x%02h", $time, data);
             for (i = 0; i < 8; i = i + 1) begin
-                ui_in[0] = data[i];
-                #10;  // one clock period
+                ui_in[0] = data[i];  // serial input bit
+                #10;                 // hold for one clock
             end
         end
     endtask
+
+    // Monitor output serial bitstream
+    always @(posedge clk) begin
+        if (ena) begin
+            $display("[%0t] Output bit: %b", $time, uo_out[0]);
+        end
+    end
 
     // Test sequence
     initial begin
@@ -50,15 +57,18 @@ module tb;
         ui_in  = 8'd0;
         uio_in = 8'd0;
 
-        // Longer reset (50ns instead of 20ns)
+        // Reset sequence
         #50 rst_n = 1;
 
-        // Hold idle inputs before enable
+        // Idle cycles before enable
         #20;
         ena = 1;
 
-        // Apply same patterns as in test.py
-        send_byte(8'h00);   // test byte
+        // Send test patterns (same style as test.py)
+        send_byte(8'h3C);   // example byte
+        send_byte(8'hA5);
+        send_byte(8'hFF);
+        send_byte(8'h12);
 
         // Extra idle cycles
         #200;
