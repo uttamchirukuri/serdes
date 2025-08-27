@@ -43,7 +43,7 @@ This design demonstrates both **signal processing (digital FIR filtering)** and 
 * `uio_oe[7:0]`: Not used; tied to zero.  
 
 ## Internal Architecture
-## Finite State Machine (FSM)
+**Finite State Machine (FSM)**
 
 The design includes a dedicated FSM to control the SERDES (serializer/deserializer), FIR filter feeding, and parallel output generation. The FSM ensures correct sequencing of reset, bit-shifting, filtering, and word reassembly.
 
@@ -87,20 +87,20 @@ The design includes a dedicated FSM to control the SERDES (serializer/deserializ
 - **Sync Word Handling**: FSM ignores or filters special sync words (e.g., `0x7E`) if configured in RTL.  
 - **Glitch Safety**: FSM prevents partial/invalid data propagation by gating FIR input until a full byte is collected.
 
-### 1. FIR Filter
+**FIR Filter**
 
 * The serial input `ui_in[0]` is passed through a **discrete FIR filter**.  
 * Implemented as a **shift register of taps** and **coefficients (multiply-accumulate)**.  
 * Produces a **filtered single-bit/sample output** each clock cycle.  
 * This stage cleans up or shapes the input stream before serialization.  
 
-### 2. Serial-to-Parallel Capture
+**Serial-to-Parallel Capture**
 
 * Filtered bits are shifted into an **8-bit shift register**.  
 * A **3-bit counter (`bit_cnt`)** tracks how many filtered bits have been received.  
 * When the counter reaches 7 (i.e., 8 bits collected), the register contents are latched into `uo_out`.  
 
-### 3. Reset / Enable Behavior
+**Reset / Enable Behavior**
 
 * On reset (`rst_n=0`): FIR filter state, shift register, counter, and outputs are cleared.  
 * With enable (`ena=1`): FIR filter runs, serial data is captured and converted to bytes.  
